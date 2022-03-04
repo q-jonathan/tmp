@@ -6,14 +6,15 @@ const explorer = require("lichess-opening-explorer");
 const Chess = require("chess.js");
 
 router.route("/calc_move").post((req, res) => {
-  let game = req.body.game;
+  let currentFen = req.body.fen;
   // let explorer = req.body.explorer
   let engineColor = req.body.colorToMove;
   let currentEval = req.body.currentEval;
 
-  let count = 0;
-  let nodeNum = 0;
-
+  var count = 0;
+  var nodeNum = 0;
+  var game = new Chess();
+  game.load(currentFen);
   makeMove(engineColor, explorer);
 
   async function makeMove(colorToMove, explorer) {
