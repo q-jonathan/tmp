@@ -1,2 +1,0 @@
-POST http://localhost:5001/api/calc_move
-content-type: application/json
