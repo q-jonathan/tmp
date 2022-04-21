@@ -1,70 +1,69 @@
+/** @format */
+
 const { squareToInt, intToSquare, pieceValue } = require("./utils/utils");
 const LichessOpeningExporer = require("lichess-opening-explorer");
 const { Chess } = require("chess.js");
 
-var currentFen
-var engineColor
-var currentEval
-var searchDepth
+var currentFen;
+var engineColor;
+var currentEval;
+var searchDepth;
 var count = 0;
 var nodeNum = 0;
-var game
+var game;
 
 exports.handler = async (event, context) => {
-  console.log(' >>> Lambda function triggered')
-  // context.callbackWaitsForEmptyEventLoop = true;
-  const body = JSON.parse(event.body)
+  console.log(" >>> Lambda function triggered");
+  const body = JSON.parse(event.body);
 
   currentFen = body.fen;
-  // let explorer = event.body.explorer
   engineColor = body.colorToMove;
   currentEval = body.currentEval;
-  searchDepth = body.searchDepth
+  searchDepth = body.searchDepth;
 
   count = 0;
   nodeNum = 0;
   game = new Chess();
-  console.log(' >>> ' + currentFen)
+  console.log(" >>> " + currentFen);
   game.load(currentFen);
 
   // console.log(' >>> ' + game)
   const r = await makeMove(engineColor);
-  console.log(r)
-  return r
-}
+  return r;
+};
 
 async function makeMove(colorToMove) {
-  console.log(' >>> makeMove')
+  console.log(" >>> makeMove");
   let explorer = new LichessOpeningExporer();
-  console.log(' >>> explorer created')
   try {
     const analysis = await explorer.analyze(game.fen(), {
       master: false,
       variant: "standard",
       speeds: ["bullet", "blitz", "rapid", "classical"],
       ratings: ["unlimited"],
-    })
+    });
 
     // do something genious
-    console.log(' >>> explorer finished')
     if (analysis.moves.length >= 3) {
       let randomNum = Math.floor(Math.random() * 3);
-      console.log('op book');
-      await new Promise(r => setTimeout(r, 1000));
+      await new Promise((r) => setTimeout(r, 1000));
 
       const response = {
-        "statusCode": 200,
-        "body": JSON.stringify({
+        statusCode: 200,
+        body: JSON.stringify({
           move: analysis.moves[randomNum].san,
           count: -1,
           currentEval: currentEval,
-          nodes: -1
+          nodes: -1,
         }),
-        "headers": { 'Content-Type': 'application/json', "Access-Control-Allow-Origin": "*" },
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
         // "isBase64Encoded": false
-      }
-      console.log(' >>> opening response ' + JSON.stringify(response))
-      return response
+      };
+      console.log(" >>> opening response " + JSON.stringify(response));
+      return response;
     }
     count = 0;
     if (game.turn() === "w" && colorToMove === "black") {
@@ -98,23 +97,18 @@ async function makeMove(colorToMove) {
       }
 
       const response = {
-        "statusCode": 200,
-        "body": null,
-        "headers": { 'Content-Type': 'application/json', "Access-Control-Allow-Origin": "*" },
-      }
+        statusCode: 200,
+        body: null,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      };
 
       return response;
     }
     console.time("Move time");
-    const move = minimax(
-      game,
-      searchDepth,
-      0,
-      -1000000,
-      1000000,
-      currentEval
-    ); //fix
-    console.log(move);
+    const move = minimax(game, searchDepth, 0, -1000000, 1000000, currentEval); //fix
     // console.log(moved.san)
     // if(moved.san.includes("x") === true){
     //   var temp = pieceNum - 1;
@@ -129,24 +123,31 @@ async function makeMove(colorToMove) {
         move: move,
         count: count,
         currentEval: currentEval,
-        nodes: nodeNum
+        nodes: nodeNum,
       }),
-      "headers": { 'Content-Type': 'application/json', "Access-Control-Allow-Origin": "*" },
-    }
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
+    };
+
+    console.log(" >>> Finished " + response);
 
     return response;
-  }
-  catch (err) {
+  } catch (err) {
     console.error(err);
-    console.log(' >>> error: ' + err)
+    console.log(" >>> error: " + err);
 
     const response = {
       statusCode: 500,
       body: JSON.stringify({ error: err }),
-      "headers": { 'Content-Type': 'application/json', "Access-Control-Allow-Origin": "*" },
-    }
-    return response
-  };
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
+    };
+    return response;
+  }
 }
 // eval of current board at targetdepth
 
@@ -220,9 +221,9 @@ function minimax(game, depth, distanceFromRoot, alpha, beta, gameEval) {
 
   if (distanceFromRoot === 0) {
     if (engineColor === "b") {
-      currentEval = (bestEval);
+      currentEval = bestEval;
     } else {
-      currentEval = (-bestEval);
+      currentEval = -bestEval;
     }
     // if(bestMove.includes("x") === true){
     //   var temp = pieceNum - 1;
